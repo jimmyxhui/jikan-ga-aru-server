@@ -13,11 +13,8 @@ import com.ultish.jikangaaruserver.dataFetchers.dgsData
 import com.ultish.jikangaaruserver.dataFetchers.dgsQuery
 import com.ultish.jikangaaruserver.dataFetchers.getEntitiesFromEnv
 import com.ultish.jikangaaruserver.entities.ETimeCharge
-import com.ultish.jikangaaruserver.entities.ETrackedTask
 import com.ultish.jikangaaruserver.entities.QETimeCharge
-import com.ultish.jikangaaruserver.entities.QETrackedTask
 import com.ultish.jikangaaruserver.trackedDays.TrackedDayService
-import com.ultish.jikangaaruserver.trackedTasks.TrackedTaskService
 import graphql.schema.DataFetchingEnvironment
 import org.dataloader.MappedBatchLoaderWithContext
 import org.springframework.beans.factory.annotation.Autowired
@@ -31,17 +28,19 @@ class TimeChargeService {
         const val DATA_LOADER_FOR_TRACKED_DAY = "trackedDayForTimeCharge"
     }
 
+
     @Autowired
     lateinit var repository: TimeChargeRepository
 
     @Autowired
-    lateinit var trackedTaskService: TrackedTaskService
+    lateinit var timeCalcService: TimeCalcService
 
     @Autowired
     lateinit var chargeCodeService: ChargeCodeService
 
     @Autowired
     lateinit var trackedDayService: TrackedDayService
+
 
     @DgsQuery
     fun timeCharges(
@@ -66,176 +65,12 @@ class TimeChargeService {
         }
     }
 
-//   @DgsMutation
-//   fun createTimeCharge(
-//      dfe: DataFetchingEnvironment,
-//      @InputArgument timeSlot: Int,
-//      @InputArgument chargeCodeId: String,
-//      @InputArgument trackedDayId: String,
-//      @InputArgument chargeCodeAppearance: Int = 0,
-//      @InputArgument totalChargeCodesForSlot: Int = 0,
-//   ): TimeCharge {
-//      if (repository.exists(BooleanBuilder()
-//            .and(QETimeCharge.eTimeCharge.timeSlot.eq(timeSlot))
-//            .and(QETimeCharge.eTimeCharge.chargeCodeId.eq(chargeCodeId))
-//         )
-//      ) {
-//         throw DgsInvalidInputArgumentException("TimeCharge for [${chargeCodeId}:${timeSlot}] already exists")
-//      }
-//
-//      val userId = getUser(dfe)
-//
-//      return dgsMutate(dfe) {
-//         repository.save(
-//            ETimeCharge(
-//               timeSlot,
-//               chargeCodeAppearance,
-//               totalChargeCodesForSlot,
-//               trackedDayId,
-//               chargeCodeId,
-//               userId,
-//            )
-//         )
-//      }
-//   }
-
-//   @DgsMutation
-//   fun updateTimeCharge(
-//      dfe: DataFetchingEnvironment,
-//      @InputArgument id: String,
-//      @InputArgument chargeCodeAppearance: Int? = null,
-//      @InputArgument totalChargeCodesForSlot: Int? = null,
-//   ): TimeCharge {
-//      val record = repository.findById(id)
-//         .map { it }
-//         .orElseThrow {
-//            DgsInvalidInputArgumentException("Couldn't find TimeCharge[${id}]")
-//         }
-//
-//      return dgsMutate(dfe) {
-//         updateTimeCharge(record, chargeCodeAppearance, totalChargeCodesForSlot)
-//      }
-//   }
-
-    fun updateTimeCharge(
-        timeCharge: ETimeCharge,
-        chargeCodeAppearance: Int? = null,
-        totalChargeCodesForSlot: Int? = null,
-    ): ETimeCharge {
-        return timeCharge.copy(
-            chargeCodeAppearance = chargeCodeAppearance ?: timeCharge.chargeCodeAppearance,
-            totalChargeCodesForSlot = totalChargeCodesForSlot ?: timeCharge.totalChargeCodesForSlot
-        )
-    }
-
-    fun updateTimeCharges(
-        userId: String,
-        trackedTaskToSave: ETrackedTask? = null,
-        trackedDayId: String,
-        timeSlotsChanged: List<Int>,
-    ) {
-
-        // Find all the Tracked Tasks that use any of the TimeSlots that have changed, these will need new TimeCharge
-        // calculations
-        val affectedTrackedTasks = trackedTaskService.repository.findAll(
-            BooleanBuilder()
-                .and(
-                    QETrackedTask.eTrackedTask.timeSlots.any()
-                        .`in`(timeSlotsChanged)
-                )
-                .and(QETrackedTask.eTrackedTask.trackedDayId.eq(trackedDayId))
-//                .and(QETrackedTask.eTrackedTask.userId.eq(userId))
-        )
-            .toMutableList()
-
-        if (trackedTaskToSave != null) {
-            // this function is called during beforeSave, so remove the stored version
-            affectedTrackedTasks.removeIf { it.id == trackedTaskToSave.id }
-            // and add the before saved version
-            affectedTrackedTasks.add(trackedTaskToSave)
-            // TODO may be odd, since the saved version hasn't made it to the DB and could fail
-        }
-
-        // For each TimeSlot group any TrackedTasks that use it
-        val timeSlotToTrackedTasksMap = timeSlotsChanged.associateBy({ it }, { timeSlot ->
-            affectedTrackedTasks.filter {
-                it.timeSlots.contains(timeSlot)
-            }
-        })
-
-        val timeSlotToTimeChargesMap = repository.findAll(
-            BooleanBuilder()
-                .and(QETimeCharge.eTimeCharge.timeSlot.`in`(timeSlotsChanged))
-                .and(QETimeCharge.eTimeCharge.trackedDayId.eq(trackedDayId))
-        )
-            .groupBy { it.timeSlot }
-
-        val toDelete = mutableSetOf<ETimeCharge>()
-
-        val allTimeCharges: List<ETimeCharge> = timeSlotToTrackedTasksMap.entries.flatMap { entry ->
-            val timeSlot = entry.key
-            val trackedTasksAtTimeSlot = entry.value
-
-            // find out how many charge codes are used, including duplicates
-            val allChargeCodes = trackedTasksAtTimeSlot.flatMap { trackedTask -> trackedTask.chargeCodeIds }
-            val numberOfChargeCodes = allChargeCodes.size
-            val chargeCodeIdsAtTimeSlot = allChargeCodes.distinct()
-
-            // find TimeCharges for ChargeCodes at this TimeSlot that aren't used anymore
-            val timeChargesForTimeSlot = timeSlotToTimeChargesMap[timeSlot]
-
-            val timeChargesNotUsedByChargeCodesAnymore = timeChargesForTimeSlot?.filter {
-                !chargeCodeIdsAtTimeSlot.contains(it.chargeCodeId)
-            } ?: listOf()
-            toDelete.addAll(timeChargesNotUsedByChargeCodesAnymore)
-
-            println("These TimeCharges aren't used by ChargeCodes at timeslot $timeSlot: $timeChargesNotUsedByChargeCodesAnymore")
-
-            // map to TimeCharge per chargecode ID
-            val timeCharges = chargeCodeIdsAtTimeSlot.map { chargeCodeId ->
-                val chargeCodeAppearance = trackedTasksAtTimeSlot.count { trackedTask ->
-                    trackedTask.chargeCodeIds.contains(chargeCodeId)
-                }
-
-                ETimeCharge(
-                    timeSlot = timeSlot,
-                    chargeCodeAppearance = chargeCodeAppearance,
-                    totalChargeCodesForSlot = numberOfChargeCodes,
-                    trackedDayId = trackedDayId,
-                    chargeCodeId = chargeCodeId,
-                    userId = userId,
-                )
-            }
-
-            println(timeCharges)
-            // TODO find existing timeCharge by trackedDayId and timeSlot
-
-            return@flatMap timeCharges
-        }
-
-        val ids = allTimeCharges.map { it.id }
-
-        // find existing timeCharges
-        val existingTimeCharges = repository.findAllById(ids)
-        val newTimeCharges = allTimeCharges.minus(existingTimeCharges.toSet())
-
-
-        repository.deleteAll(toDelete)
-
-        existingTimeCharges.forEach {
-            updateTimeCharge(it, it.chargeCodeAppearance, it.totalChargeCodesForSlot)
-        }
-
-        newTimeCharges.forEach {
-            repository.save(it)
-        }
-    }
 
     fun resetTimeCharges(userId: String, trackedDayId: String) {
         // full time range 0=00:00, 1=00:06, 2=00:12, etc to X=23:54, 10 per hour
         val timeSlots = (0..240).toList()
 
-        updateTimeCharges(
+        timeCalcService.updateTimeCharges(
             trackedDayId = trackedDayId,
             timeSlotsChanged = timeSlots,
             userId = userId,

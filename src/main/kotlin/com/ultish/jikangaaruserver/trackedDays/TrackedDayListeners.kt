@@ -31,25 +31,26 @@ class TrackedDayTrackedTaskListener : AbstractMongoEventListener<ETrackedTask>()
     lateinit var trackedDayService: TrackedDayService
 
     override fun onAfterSave(event: AfterSaveEvent<ETrackedTask>) {
-        val trackedDayId = event.source.trackedDayId
-        trackedDayService.repository.findById(trackedDayId)
-            .map { trackedDay ->
-                trackedDayService.updateTrackedDay(
-                    trackedDay = trackedDay,
-                    trackedTaskIds = trackedDay.trackedTaskIds + listOf(getIdFrom(event))
-                )
-            }
+//        val trackedDayId = event.source.trackedDayId
+//        trackedDayService.repository.findById(trackedDayId)
+//            .map { trackedDay ->
+//                trackedDayService.updateTrackedDay(
+//                    trackedDay = trackedDay,
+////                    trackedTaskIds = trackedDay.trackedTaskIds + listOf(getIdFrom(event))
+//                )
+//            }
     }
 
     override fun onAfterDelete(event: AfterDeleteEvent<ETrackedTask>) {
-        getIdFrom(event)?.let { trackedTaskId ->
-            trackedDayService.repository.findAll(QETrackedDay.eTrackedDay.trackedTaskIds.contains(trackedTaskId))
-                .forEach { trackedDay ->
-                    trackedDayService.updateTrackedDay(
-                        trackedDay = trackedDay,
-                        trackedTaskIds = trackedDay.trackedTaskIds - listOf(trackedTaskId).toSet()
-                    )
-                }
-        }
+//
+//        getIdFrom(event)?.let { trackedTaskId ->
+//            trackedDayService.repository.findAll(QETrackedDay.eTrackedDay.trackedTaskIds.contains(trackedTaskId))
+//                .forEach { trackedDay ->
+//                    trackedDayService.updateTrackedDay(
+//                        trackedDay = trackedDay,
+//                        trackedTaskIds = trackedDay.trackedTaskIds - listOf(trackedTaskId).toSet()
+//                    )
+//                }
+//        }
     }
 }

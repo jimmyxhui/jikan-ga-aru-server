@@ -23,6 +23,7 @@ data class ETrackedTask(
     val chargeCodeIds: List<String> = listOf(),
     @Indexed
     val userId: String,
+//    @Version val version: Long? = null
 ) : GraphQLEntity<TrackedTask> {
     constructor(
         notes: String?,

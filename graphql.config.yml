@@ -3,3 +3,4 @@ schema:
   - https://192.168.1.41:8443/graphql:
       headers:
         user-id: 61cd4dfa37595c6ebaddd54d
+  - http://localhost:8080/graphql:

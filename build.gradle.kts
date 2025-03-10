@@ -12,10 +12,10 @@ plugins {
 
 group = "com.ultish"
 version = "0.0.1-SNAPSHOT"
-java.sourceCompatibility = JavaVersion.VERSION_17
+java.sourceCompatibility = JavaVersion.VERSION_21
 
 
-extra["netflixDgsVersion"] = "10.0.1"
+extra["netflixDgsVersion"] = "10.0.4"
 
 kapt {
     correctErrorTypes = true
@@ -35,9 +35,9 @@ dependencyManagement {
 dependencies {
     implementation("org.springframework:spring-webflux")
 
-    implementation("org.springframework.boot:spring-boot-starter-oauth2-resource-server")
-    implementation("org.springframework.boot:spring-boot-starter-security")
-    testImplementation("org.springframework.security:spring-security-test")
+//    implementation("org.springframework.boot:spring-boot-starter-oauth2-resource-server")
+//    implementation("org.springframework.boot:spring-boot-starter-security")
+//    testImplementation("org.springframework.security:spring-security-test")
 
     implementation("com.netflix.graphql.dgs:graphql-dgs-spring-graphql-starter")
     implementation("org.springframework.boot:spring-boot-starter-websocket")
@@ -87,15 +87,15 @@ dependencies {
 
 
     // adding this causes it to start exporting data.
-    implementation("io.micrometer:micrometer-tracing")
-    implementation("io.micrometer:micrometer-registry-otlp")
+//    implementation("io.micrometer:micrometer-tracing")
+//    implementation("io.micrometer:micrometer-registry-otlp")
     // force update on this package to get protobuf-java:3.x
     implementation("com.apollographql.federation:federation-graphql-java-support:5.3.0")
 
     // spring deps for tracing
-    implementation("io.micrometer:micrometer-tracing-bridge-otel")
-    implementation("io.opentelemetry:opentelemetry-exporter-otlp")
-    implementation("org.springframework.boot:spring-boot-starter-actuator") // For auto-configuration including tracing
+//    implementation("io.micrometer:micrometer-tracing-bridge-otel")
+//    implementation("io.opentelemetry:opentelemetry-exporter-otlp")
+//    implementation("org.springframework.boot:spring-boot-starter-actuator") // For auto-configuration including tracing
 //    implementation("com.netflix.graphql.dgs:graphql-dgs-spring-boot-micrometer")
 
 
@@ -126,7 +126,7 @@ tasks.withType<JavaCompile> {
 tasks.withType<KotlinCompile> {
     kotlinOptions {
         freeCompilerArgs = listOf("-Xjsr305=strict", "-Xjvm-default=all")
-        jvmTarget = "17"
+        jvmTarget = "21"
     }
     dependsOn("generateJava")
 }

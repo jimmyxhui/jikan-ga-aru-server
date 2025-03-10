@@ -22,8 +22,8 @@ data class ETrackedDay(
     val mode: DayMode,
     @Indexed
     val userId: String,
-    @Indexed
-    val trackedTaskIds: List<String>,
+//    @Indexed
+//    val trackedTaskIds: List<String>,
 ) : GraphQLEntity<TrackedDay> {
     constructor(
         date: Date,
@@ -31,7 +31,7 @@ data class ETrackedDay(
         year: Int,
         mode: DayMode,
         userId: String,
-        trackedTaskIds: List<String> = listOf(),
+//        trackedTaskIds: List<String> = listOf(),
     ) : this(
         id = "$userId:${ObjectId()}",
         date,
@@ -39,7 +39,7 @@ data class ETrackedDay(
         year,
         mode,
         userId,
-        trackedTaskIds
+//        trackedTaskIds
     )
 
     override fun toGqlType(): TrackedDay =

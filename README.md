@@ -57,3 +57,11 @@ Adding truststore/key to VM options:
 ```
 -Djavax.net.ssl.trustStore=jikan-ga-aru-server/src/main/resources/truststore.jks -Djavax.net.ssl.trustStorePassword=<password>
 ```
+
+# Notes:
+
+- removed authentication from this repo!!
+- spring.graphql.cors config didn't require separate Security Config
+- Virtual Threads enabled for @Async
+- @Version added to ETrackedTask, may or may not want it
+- locking in updateTimeCharges is based on trackedTaskId + timeslot for better performance
