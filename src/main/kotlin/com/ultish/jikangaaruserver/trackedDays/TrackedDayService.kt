@@ -20,8 +20,6 @@ import org.dataloader.MappedBatchLoaderWithContext
 import org.reactivestreams.Publisher
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.data.domain.Sort
-import org.springframework.security.core.annotation.AuthenticationPrincipal
-import org.springframework.security.core.userdetails.UserDetails
 import reactor.core.publisher.ConnectableFlux
 import reactor.core.publisher.Flux
 import reactor.core.publisher.FluxSink
@@ -74,7 +72,6 @@ class TrackedDayService {
     @DgsSubscription
     fun trackedDayChanged(
         dfe: DataFetchingEnvironment,
-        @AuthenticationPrincipal userDetails: UserDetails?,
         @InputArgument month: Int?,
         @InputArgument year: Int?
     ): Publisher<TrackedDay> {
@@ -265,7 +262,7 @@ class TrackedDayService {
         dfe: DataFetchingEnvironment,
         @InputArgument id: String,
         @InputArgument mode: DayMode? = null,
-        @InputArgument trackedTaskIds: List<String>? = null,
+//        @InputArgument trackedTaskIds: List<String>? = null,
     ): TrackedDay {
         val record = repository.findById(id)
             .map { it }
@@ -274,20 +271,19 @@ class TrackedDayService {
             }
 
         return dgsMutate(dfe) {
-            updateTrackedDay(record, mode, trackedTaskIds)
+            updateTrackedDay(record, mode/*, trackedTaskIds*/)
         }
     }
 
     fun updateTrackedDay(
         trackedDay: ETrackedDay,
         mode: DayMode? = null,
-        trackedTaskIds: List<String>? = null,
+        /* trackedTaskIds: List<String>? = null,*/
     ): ETrackedDay {
 
 
         val copy = trackedDay.copy(
             mode = mode ?: trackedDay.mode,
-            trackedTaskIds = trackedTaskIds ?: trackedDay.trackedTaskIds
         )
         val result = repository.save(copy)
 

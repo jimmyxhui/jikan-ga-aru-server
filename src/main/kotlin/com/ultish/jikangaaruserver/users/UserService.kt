@@ -45,7 +45,7 @@ class UserService {
             username?.let {
                 builder.and(QEUser.eUser.username.equalsIgnoreCase(it))
             }
- 
+
             repository.findAll(builder)
 
         }
@@ -64,7 +64,7 @@ class UserService {
             EUser(
                 username = username,
                 password = password, // TODO hash this
-                trackedDayIds = listOf()
+//                trackedDayIds = listOf()
             )
         )
             .toGqlType()
@@ -77,8 +77,7 @@ class UserService {
 
     @DgsMutation
     fun updateUser(
-        @InputArgument userId: String,
-        @InputArgument trackedDayIds: List<String>? = null,
+        @InputArgument userId: String
     ): User {
         val user = repository.findById(userId)
             .map { it }
@@ -86,14 +85,13 @@ class UserService {
                 DgsInvalidInputArgumentException("Couldn't find User[${userId}]")
             }
 
-        return updateUser(user, trackedDayIds)
+        return updateUser(user)
     }
 
-    fun updateUser(user: EUser, trackedDayIds: List<String>? = null): User {
-        println("Updating user[${user.username}] with trackedDayIds[${trackedDayIds}]")
-        val copy = user.copy(
-            trackedDayIds = trackedDayIds ?: user.trackedDayIds
-        )
+    fun updateUser(user: EUser): User {
+        println("Updating user[${user.username}]")
+        val copy = user.copy()
+
         return repository.save(copy)
             .toGqlType()
     }

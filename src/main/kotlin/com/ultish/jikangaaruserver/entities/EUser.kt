@@ -4,7 +4,6 @@ import com.querydsl.core.annotations.QueryEntity
 import com.ultish.generated.types.User
 import jakarta.persistence.Entity
 import org.springframework.data.annotation.Id
-import org.springframework.data.mongodb.core.index.Indexed
 import org.springframework.data.mongodb.core.mapping.Document
 import java.util.*
 
@@ -21,13 +20,13 @@ data class EUser(
     val id: String,
     val username: String,
     val password: String,
-    @Indexed
-    val trackedDayIds: List<String> = listOf(), // by using IDs only you need to fetch the relationships yourself via DGS
+//    @Indexed
+//    val trackedDayIds: List<String> = listOf(), // by using IDs only you need to fetch the relationships yourself via DGS
 ) : GraphQLEntity<User> {
-    constructor(username: String, password: String, trackedDayIds: List<String> = listOf()) :
+    constructor(username: String, password: String/*, trackedDayIds: List<String> = listOf()*/) :
             this(
                 UUID.nameUUIDFromBytes(username.toByteArray())
-                    .toString(), username, password, trackedDayIds
+                    .toString(), username, password/*, trackedDayIds*/
             )
 
 

@@ -3,12 +3,14 @@ package com.ultish.jikangaaruserver.timeCharges
 import com.ultish.jikangaaruserver.entities.ETrackedTask
 import com.ultish.jikangaaruserver.listeners.getIdFrom
 import com.ultish.jikangaaruserver.trackedTasks.TrackedTaskService
+import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.data.mongodb.core.mapping.event.AbstractMongoEventListener
 import org.springframework.data.mongodb.core.mapping.event.AfterDeleteEvent
 import org.springframework.data.mongodb.core.mapping.event.BeforeDeleteEvent
 import org.springframework.data.mongodb.core.mapping.event.BeforeSaveEvent
 import org.springframework.stereotype.Component
+
 
 @Component
 class TimeChargeTrackedTaskListener : AbstractMongoEventListener<ETrackedTask>() {
@@ -18,10 +20,14 @@ class TimeChargeTrackedTaskListener : AbstractMongoEventListener<ETrackedTask>()
     @Autowired
     lateinit var trackedTaskService: TrackedTaskService
 
+    @Autowired
+    lateinit var timeCalcService: TimeCalcService
+
+    private final val logger = LoggerFactory.getLogger(this::class.java)
+
     override fun onBeforeSave(event: BeforeSaveEvent<ETrackedTask>) {
 
-//        if (event.source?.id != null) {
-
+        logger.info("onBeforeSave ${event.source.id}")
         val existingTrackedTask = trackedTaskService.repository.findById(event.source.id)
         val existingTimeSlots = if (existingTrackedTask.isPresent) {
             existingTrackedTask.get().timeSlots
@@ -40,13 +46,13 @@ class TimeChargeTrackedTaskListener : AbstractMongoEventListener<ETrackedTask>()
         }
 
         val timeSlotsChanged = if (chargeCodesChanged) {
-            println("Charge codes changed, re-calculating all timeslot charges")
+            logger.debug("Charge codes changed, re-calculating all timeslot charges")
             event.source.timeSlots
         } else {
             val addedTimeSlots = event.source.timeSlots.minus(existingTimeSlots.toSet())
             val removedTimeSlots = existingTimeSlots.minus(event.source.timeSlots.toSet())
-            println("added timeslots: $addedTimeSlots")
-            println("removed timeslots: $removedTimeSlots")
+            logger.debug("added timeslots: $addedTimeSlots")
+            logger.debug("removed timeslots: $removedTimeSlots")
 
             addedTimeSlots + removedTimeSlots
         }
@@ -54,13 +60,12 @@ class TimeChargeTrackedTaskListener : AbstractMongoEventListener<ETrackedTask>()
         val trackedTaskToSave = event.source
         val userId = trackedTaskToSave.userId
 
-        timeChargeService.updateTimeCharges(
+        timeCalcService.updateTimeCharges(
             userId,
             trackedTaskToSave,
             trackedTaskToSave.trackedDayId,
             timeSlotsChanged
         )
-//        }
     }
 
     override fun onAfterDelete(event: AfterDeleteEvent<ETrackedTask>) {

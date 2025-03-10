@@ -9,9 +9,7 @@ client:
     issuer: https://192.168.1.41:18443/realms/jxhui
 
 server:
-  #  address: 0.0.0.0
-  #  port: 8443
-  port: 80
+  port: 8080
   ssl:
     enabled: false
     certificate: classpath:cert/jikan-server.crt
@@ -21,6 +19,7 @@ server:
     trust-store-type: JKS
 
 spring:
+
   application:
     name: jikan-server
   data:
@@ -28,6 +27,10 @@ spring:
       uri: mongodb://localhost:27017/jikan-ga-aru
       auto-index-creation: true
   graphql:
+    cors:
+      allowed-origins: "*"
+      allowed-methods: "*"
+      allowed-headers: "*"
     websocket:
       path: /subscriptions
 
@@ -50,14 +53,14 @@ logging:
   level:
     root: info
     org:
-      mongodb: INFO
       springframework:
+        transaction: trace
         beans:
           factory:
             support: INFO
         security: TRACE
         data:
-          mongodb: INFO
+          mongodb: info
   #
   #            core:
   #              MongoTemplate: DEBUG
@@ -72,9 +75,9 @@ management:
   otlp:
     tracing:
       export:
-        enabled: true
+        enabled: false
       endpoint: "http://192.168.1.41:4318/v1/traces" # this causes it to export! finally....
   tracing:
     sampling:
       probability: 1.0 # sample 100% of events
-    enabled: true
+    enabled: false

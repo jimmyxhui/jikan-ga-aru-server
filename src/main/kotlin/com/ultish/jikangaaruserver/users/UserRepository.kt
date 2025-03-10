@@ -6,4 +6,6 @@ import org.springframework.data.querydsl.QuerydslPredicateExecutor
 
 interface UserRepository : MongoRepository<EUser, String>,
     QuerydslPredicateExecutor<EUser> {
+
+    fun findByUsername(username: String): EUser?
 }
