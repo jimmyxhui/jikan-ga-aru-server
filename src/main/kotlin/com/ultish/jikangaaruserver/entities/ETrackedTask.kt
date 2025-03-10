@@ -5,7 +5,6 @@ import com.ultish.generated.types.TrackedTask
 import jakarta.persistence.Entity
 import org.bson.types.ObjectId
 import org.springframework.data.annotation.Id
-import org.springframework.data.annotation.Version
 import org.springframework.data.mongodb.core.index.Indexed
 import org.springframework.data.mongodb.core.mapping.Document
 
@@ -24,7 +23,7 @@ data class ETrackedTask(
     val chargeCodeIds: List<String> = listOf(),
     @Indexed
     val userId: String,
-    @Version val version: Long? = null
+//    @Version val version: Long? = null
 ) : GraphQLEntity<TrackedTask> {
     constructor(
         notes: String?,
