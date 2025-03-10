@@ -14,6 +14,9 @@ import org.springframework.stereotype.Service
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.locks.ReentrantLock
 
+/**
+ * this function is async for better performance, using virtual threads no need to set a pool
+ */
 @Service
 @EnableAsync
 class TimeCalcService {
